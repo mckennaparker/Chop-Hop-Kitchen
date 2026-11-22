@@ -2,39 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-[Serializable]
-public class Chart
-{
-    public double bpm;
-    public List<Recipe> recipes = new();
-    public List<Order> orders = new();
-}
-
-// a series of action steps that make up a dish
-[Serializable]
-public class Recipe
-{
-    public string name;
-    public List<Step> steps = new();
-}
-
-// an individual action step within a recipe
-[Serializable]
-public class Step
-{
-    public string action; // parsed into ActionType at load
-    public double beat;   // relative to the start of the order
-}
-
-// a recipe placed in time within a song
-[Serializable]
-public class Order
-{
-    public string recipe; // matches recipe name
-    public double beat;   // absolute beat in the song
-}
-
 // Converts a JSON chart (recipes + orders) into the runtime Song used by the Conductor.
 public static class ChartLoader
 {
@@ -67,7 +34,7 @@ public static class ChartLoader
         double spb = 60.0 / chart.bpm;
         var song = new Song { bpm = chart.bpm };
 
-        // generate a ticket for each order in song (parsing notes)
+        // one ticket per order; its notes are the recipe's steps offset by the order's beat
         foreach (Order order in chart.orders)
         {
             if (order.recipe == null || !recipes.TryGetValue(order.recipe, out Recipe recipe))
@@ -76,17 +43,17 @@ public static class ChartLoader
                 continue;
             }
 
-            // generate a note for each step in an order
             var ticket = new Ticket { recipe = recipe };
             foreach (Step step in recipe.steps)
             {
+                // IsDefined rejects numeric strings like "7" that TryParse would accept
                 if (!Enum.TryParse(step.action, true, out ActionType type) || !Enum.IsDefined(typeof(ActionType), type))
                 {
                     Debug.LogError($"{file.name}: unknown action '{step.action}' in recipe '{recipe.name}', skipping step");
                     continue;
                 }
 
-                double beat = order.beat + step.beat; // calculate absolute beat offset based on order time
+                double beat = order.beat + step.beat;
                 ticket.notes.Add(new Note { type = type, beat = beat, time = beat * spb, ticket = ticket });
             }
 
@@ -100,11 +67,11 @@ public static class ChartLoader
             ticket.startTime = ticket.notes[0].time;
             ticket.endTime = ticket.notes[^1].time;
 
-            song.tickets.Add(ticket); // add ticket to song
-            song.notes.AddRange(ticket.notes); // add note to flat song list of notes
+            song.tickets.Add(ticket);
+            song.notes.AddRange(ticket.notes);
         }
 
-        // sort by when the first note actually plays
+        // sort by when the first note actually plays (a recipe may not start at its step beat 0)
         song.tickets.Sort((a, b) => a.startTime.CompareTo(b.startTime));
         for (int i = 0; i < song.tickets.Count; i++)
         {

@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 // Owns the song clock and audio playback, judges player actions against the chart,
-// and moves tickets through all ticket states
+// and moves tickets through Queued -> Active -> Done.
 [DefaultExecutionOrder(-100)] // update SongTime before any other script reads it this frame
 [RequireComponent(typeof(AudioSource))]
 public class Conductor : MonoBehaviour
@@ -13,17 +13,21 @@ public class Conductor : MonoBehaviour
     [SerializeField] double startDelay = 0.2; // seconds; schedules audio slightly ahead so it starts exactly on dspStart
 
     [Header("Judging")]
-    [SerializeField] double tolerance = 0.1; // seconds allowed on either side of a note's time
+    [SerializeField] double tolerance = 0.1;      // seconds allowed on either side of a note's time
+    [SerializeField] double perfectWindow = 0.035; // hits this close to the beat count as Perfect
 
     [Header("Tickets")]
     [SerializeField] double queueLeadBeats = 8;  // how early a ticket appears on the rail
     [SerializeField] double activeLeadBeats = 2; // how early it expands into a lane
 
     public Song Song { get; private set; }
-    public double SongTime { get; private set; } // seconds since song start; negative during the lead-in
+    public double SongTime { get; private set; }   // seconds since song start; negative during the lead-in
+    public double VisualTime { get; private set; } // smoothed SongTime; use for anything that moves on screen
     public double SongBeat => SongTime / Song.SecondsPerBeat;
+    public double VisualBeat => VisualTime / Song.SecondsPerBeat;
     public bool IsPlaying { get; private set; }
 
+    public event Action SongStarted;           // fired by PlaySong, after progress is reset
     public event Action<Note, double> NoteHit; // note, delta in seconds (+ = late)
     public event Action<Note> NoteMissed;
     public event Action<Ticket> TicketQueued, TicketActivated, TicketFinished;
@@ -53,11 +57,38 @@ public class Conductor : MonoBehaviour
         if (!IsPlaying) return;
 
         SongTime = Now;
+        UpdateVisualTime();
         UpdateTickets();
         ExpireMissedNotes();
     }
 
-    // begins playback of the song from the top
+    // dspTime only advances once per audio buffer (~10-20 ms steps), which makes scrolling stutter.
+    // VisualTime advances every frame and is pulled back toward the audio clock.
+    void UpdateVisualTime()
+    {
+        double dt = Time.unscaledDeltaTime;
+        VisualTime += dt;
+
+        double error = SongTime - VisualTime;
+        if (Math.Abs(error) > 0.05) VisualTime = SongTime;   // big jump (hitch, restart): snap
+        else VisualTime += error * Math.Min(1.0, dt * 10.0); // small drift: ease back
+    }
+
+    // earliest unjudged note matching `match` that's due within `maxAheadSeconds`, or null
+    public Note PeekNext(Predicate<Note> match, double maxAheadSeconds)
+    {
+        if (!IsPlaying) return null;
+
+        for (int i = firstPending; i < Song.notes.Count; i++)
+        {
+            Note note = Song.notes[i];
+            if (note.time - SongTime > maxAheadSeconds) break;
+            if (!note.judged && match(note)) return note;
+        }
+        return null;
+    }
+
+    // begins (or restarts) playback of the song from the top
     public void PlaySong()
     {
         Song.ResetProgress();
@@ -68,8 +99,9 @@ public class Conductor : MonoBehaviour
         dspStart = AudioSettings.dspTime + startDelay;
         source.PlayScheduled(dspStart);
 
-        SongTime = -startDelay;
+        SongTime = VisualTime = -startDelay;
         IsPlaying = true;
+        SongStarted?.Invoke();
     }
 
     // called whenever the player performs an action
@@ -113,6 +145,11 @@ public class Conductor : MonoBehaviour
     void Judge(Note note, bool hit, double delta)
     {
         note.judged = true;
+        note.delta = delta;
+        note.result = !hit ? Judgement.Miss
+                    : Math.Abs(delta) <= perfectWindow ? Judgement.Perfect
+                    : Judgement.Good;
+
         Ticket t = note.ticket;
         t.judgedCount++;
 
@@ -161,6 +198,7 @@ public class Conductor : MonoBehaviour
     void OnValidate()
     {
         tolerance = Math.Max(0.0, tolerance);
+        perfectWindow = Math.Clamp(perfectWindow, 0.0, tolerance);
         startDelay = Math.Max(0.05, startDelay);
         activeLeadBeats = Math.Max(0.0, activeLeadBeats);
         queueLeadBeats = Math.Max(activeLeadBeats, queueLeadBeats); // must queue before activating
