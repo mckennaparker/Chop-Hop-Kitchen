@@ -1,0 +1,21 @@
+{
+  "bpm": 100,
+  "recipes": [
+    { "name": "Burger", "steps": [
+      { "action": "chop", "beat": 0 }, { "action": "chop", "beat": 1 }, { "action": "chop", "beat": 2 },
+      { "action": "stir", "beat": 4 }, { "action": "plate", "beat": 6 } ] },
+    { "name": "Soup", "steps": [
+      { "action": "chop", "beat": 0 }, { "action": "chop", "beat": 1 },
+      { "action": "stir", "beat": 2 }, { "action": "stir", "beat": 3 }, { "action": "plate", "beat": 5 } ] },
+    { "name": "Salad", "steps": [
+      { "action": "chop", "beat": 0 }, { "action": "chop", "beat": 0.5 }, { "action": "chop", "beat": 1 },
+      { "action": "chop", "beat": 1.5 }, { "action": "plate", "beat": 3 } ] }
+  ],
+  "orders": [
+    { "recipe": "Burger", "beat": 8 },
+    { "recipe": "Soup",   "beat": 18 },
+    { "recipe": "Salad",  "beat": 28 },
+    { "recipe": "Burger", "beat": 36 },
+    { "recipe": "Soup",   "beat": 46 }
+  ]
+}
