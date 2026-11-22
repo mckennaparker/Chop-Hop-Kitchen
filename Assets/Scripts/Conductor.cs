@@ -1,88 +1,96 @@
 using System;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 
-public enum ActionType { Chop, Stir, Plate }
-
-[Serializable]
-public class Note
-{
-    // unconverted
-    public string action;
-    public double beat;
-
-    // converted (runtime)
-    [NonSerialized] public ActionType type; // parsed from action at load
-    [NonSerialized] public double time;     // parsed from beat at load
-    [NonSerialized] public bool judged;     // already hit or missed
-}
-
-[Serializable]
-public class Song
-{
-    public double bpm;
-    public List<Note> notes = new List<Note>();
-}
-
+// Owns the song clock and audio playback, judges player actions against the chart,
+// and moves tickets through all ticket states
+[DefaultExecutionOrder(-100)] // update SongTime before any other script reads it this frame
 [RequireComponent(typeof(AudioSource))]
 public class Conductor : MonoBehaviour
 {
+    [Header("Song")]
     [SerializeField] TextAsset chartFile;
     [SerializeField] AudioClip music;
+    [SerializeField] double startDelay = 0.2; // seconds; schedules audio slightly ahead so it starts exactly on dspStart
+
+    [Header("Judging")]
     [SerializeField] double tolerance = 0.1; // seconds allowed on either side of a note's time
 
-    public Song Song;
-    public double SongTime;
-    public double SongBeat => SongTime * Song.bpm / 60.0;
+    [Header("Tickets")]
+    [SerializeField] double queueLeadBeats = 8;  // how early a ticket appears on the rail
+    [SerializeField] double activeLeadBeats = 2; // how early it expands into a lane
+
+    public Song Song { get; private set; }
+    public double SongTime { get; private set; } // seconds since song start; negative during the lead-in
+    public double SongBeat => SongTime / Song.SecondsPerBeat;
+    public bool IsPlaying { get; private set; }
+
+    public event Action<Note, double> NoteHit; // note, delta in seconds (+ = late)
+    public event Action<Note> NoteMissed;
+    public event Action<Ticket> TicketQueued, TicketActivated, TicketFinished;
 
     AudioSource source;
     double dspStart;
-    int firstPending; // index of earliest note that hasn't been judged yet
+    int firstPending;          // index of earliest note that hasn't been judged yet
+    int nextTicketToQueue;     // index of next ticket to put on the rail
+    int nextTicketToActivate;  // index of next ticket to expand
 
-    public void Awake()
+    // exact time right now, independent of when this frame's Update ran
+    double Now => AudioSettings.dspTime - dspStart;
+
+    void Awake()
     {
         source = GetComponent<AudioSource>();
-        Song = LoadSong(chartFile);
+        source.playOnAwake = false;
+
+        Song = ChartLoader.Load(chartFile);
+        if (Song == null) enabled = false; // error already logged; Start won't run
     }
 
-    void Start()
-    {
-        PlaySong();
-    }
+    void Start() => PlaySong();
 
     void Update()
     {
-        SongTime = AudioSettings.dspTime - dspStart;
+        if (!IsPlaying) return;
 
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-            RegisterAction(ActionType.Chop);
-
+        SongTime = Now;
+        UpdateTickets();
         ExpireMissedNotes();
     }
 
-    // called whenever player performs an action
-    // returns true if it hit a note of that type within tolerance window
+    // begins playback of the song from the top
+    public void PlaySong()
+    {
+        Song.ResetProgress();
+        firstPending = nextTicketToQueue = nextTicketToActivate = 0;
+
+        source.Stop();
+        source.clip = music;
+        dspStart = AudioSettings.dspTime + startDelay;
+        source.PlayScheduled(dspStart);
+
+        SongTime = -startDelay;
+        IsPlaying = true;
+    }
+
+    // called whenever the player performs an action
+    // returns true if it hit an unjudged note of that type within the tolerance window
     public bool RegisterAction(ActionType type)
     {
-        double now = AudioSettings.dspTime - dspStart;
+        if (!IsPlaying) return false;
+        double now = Now;
 
         for (int i = firstPending; i < Song.notes.Count; i++)
         {
             Note note = Song.notes[i];
             double delta = now - note.time;
 
-            if (delta < -tolerance) break; // rest of the notes are too far ahead
+            if (delta < -tolerance) break; // this and all later notes are too far ahead
             if (note.judged || note.type != type || delta > tolerance) continue;
 
-            note.judged = true;
-            Debug.Log($"[{now:F3}s] HIT  #{i} {type} ({delta * 1000:+0;-0;0} ms)");
+            Judge(note, true, delta);
             return true;
         }
 
-        Debug.Log($"[{now:F3}s] {type} pressed, no {type} note in window");
         return false;
     }
 
@@ -95,39 +103,66 @@ public class Conductor : MonoBehaviour
             if (!note.judged)
             {
                 if (SongTime - note.time <= tolerance) return; // still hittable
-                note.judged = true;
-                Debug.Log($"[{SongTime:F3}s] MISS #{firstPending} {note.type}");
+                Judge(note, false, 0.0);
             }
             firstPending++;
         }
     }
 
-    // converts JSON song chart into runtime note data used by conductor
-    public static Song LoadSong(TextAsset file)
+    // records a hit/miss on the note and its ticket, and fires the matching events
+    void Judge(Note note, bool hit, double delta)
     {
-        Song song = JsonUtility.FromJson<Song>(file.text);
-        double secondsPerBeat = 60.0 / song.bpm;
+        note.judged = true;
+        Ticket t = note.ticket;
+        t.judgedCount++;
 
-        foreach (Note note in song.notes)
+        if (hit)
         {
-            if (!Enum.TryParse(note.action, true, out note.type))
-                Debug.LogError($"{file.name}: unknown action '{note.action}' at beat {note.beat}");
-            note.time = note.beat * secondsPerBeat;
+            t.hits++;
+            NoteHit?.Invoke(note, delta);
+        }
+        else
+        {
+            t.misses++;
+            NoteMissed?.Invoke(note);
         }
 
-        song.notes.Sort((a, b) => a.beat.CompareTo(b.beat));
-        return song;
+        if (t.IsFinished)
+        {
+            t.state = TicketState.Done;
+            TicketFinished?.Invoke(t);
+        }
     }
 
-    // begins playback of song
-    public void PlaySong()
+    // advances tickets to Queued / Active once the song reaches their lead times
+    void UpdateTickets()
     {
-        foreach (Note note in Song.notes) note.judged = false;
-        firstPending = 0;
+        double spb = Song.SecondsPerBeat;
+        var tickets = Song.tickets;
 
-        source.clip = music;
-        dspStart = AudioSettings.dspTime;
-        source.PlayScheduled(dspStart);
+        while (nextTicketToQueue < tickets.Count &&
+               SongTime >= tickets[nextTicketToQueue].startTime - queueLeadBeats * spb)
+        {
+            Ticket t = tickets[nextTicketToQueue++];
+            t.state = TicketState.Queued;
+            TicketQueued?.Invoke(t);
+        }
+
+        // only queued tickets can activate, so a ticket is always Queued before it's Active
+        while (nextTicketToActivate < nextTicketToQueue &&
+               SongTime >= tickets[nextTicketToActivate].startTime - activeLeadBeats * spb)
+        {
+            Ticket t = tickets[nextTicketToActivate++];
+            t.state = TicketState.Active;
+            TicketActivated?.Invoke(t);
+        }
     }
 
+    void OnValidate()
+    {
+        tolerance = Math.Max(0.0, tolerance);
+        startDelay = Math.Max(0.05, startDelay);
+        activeLeadBeats = Math.Max(0.0, activeLeadBeats);
+        queueLeadBeats = Math.Max(activeLeadBeats, queueLeadBeats); // must queue before activating
+    }
 }
