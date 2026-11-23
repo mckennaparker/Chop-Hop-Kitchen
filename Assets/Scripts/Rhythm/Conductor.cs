@@ -10,7 +10,7 @@ public class Conductor : MonoBehaviour
     [Header("Song")]
     [SerializeField] TextAsset chartFile;
     [SerializeField] AudioClip music;
-    [SerializeField] double startDelay = 0.2; // seconds; schedules audio slightly ahead so it starts exactly on dspStart
+    [SerializeField] double leadIn = 2.0; // seconds of silence before the music starts; the clock (and tickets) run during it
 
     [Header("Judging")]
     [SerializeField] double tolerance = 0.1;      // seconds allowed on either side of a note's time
@@ -37,6 +37,10 @@ public class Conductor : MonoBehaviour
     int firstPending;          // index of earliest note that hasn't been judged yet
     int nextTicketToQueue;     // index of next ticket to put on the rail
     int nextTicketToActivate;  // index of next ticket to expand
+
+    // audio is always scheduled at least this far ahead so PlayScheduled can hit dspStart exactly,
+    // even when leadIn is 0
+    const double ScheduleBuffer = 0.1;
 
     // exact time right now, independent of when this frame's Update ran
     double Now => AudioSettings.dspTime - dspStart;
@@ -96,12 +100,16 @@ public class Conductor : MonoBehaviour
 
         source.Stop();
         source.clip = music;
-        dspStart = AudioSettings.dspTime + startDelay;
+        // song time 0 is when the music starts; everything before it is the silent lead-in
+        dspStart = AudioSettings.dspTime + ScheduleBuffer + leadIn;
         source.PlayScheduled(dspStart);
 
-        SongTime = VisualTime = -startDelay;
+        SongTime = VisualTime = Now; // negative for the whole lead-in
         IsPlaying = true;
         SongStarted?.Invoke();
+
+        // tickets early enough to already be Queued/Active at the start of the lead-in appear immediately
+        UpdateTickets();
     }
 
     // called whenever the player performs an action
@@ -199,7 +207,7 @@ public class Conductor : MonoBehaviour
     {
         tolerance = Math.Max(0.0, tolerance);
         perfectWindow = Math.Clamp(perfectWindow, 0.0, tolerance);
-        startDelay = Math.Max(0.05, startDelay);
+        leadIn = Math.Max(0.0, leadIn);
         activeLeadBeats = Math.Max(0.0, activeLeadBeats);
         queueLeadBeats = Math.Max(activeLeadBeats, queueLeadBeats); // must queue before activating
     }

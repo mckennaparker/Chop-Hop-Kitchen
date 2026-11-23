@@ -1,9 +1,15 @@
 {
-  "bpm": 100,
+  "bpm": 168,
   "recipes": [
-    { "name": "Burger", "steps": [
-      { "action": "chop", "beat": 0 }, { "action": "chop", "beat": 1 }, { "action": "chop", "beat": 2 },
-      { "action": "stir", "beat": 4 }, { "action": "plate", "beat": 6 } ] },
+    { "name": "Salad", "steps": [
+      { "action": "chop", "beat": 0 }, 
+      { "action": "chop", "beat": 1 }, 
+      { "action": "chop", "beat": 2 },
+      { "action": "chop", "beat": 5 }, 
+      { "action": "chop", "beat": 6 }, 
+      { "action": "chop", "beat": 7 }, 
+      { "action": "plate", "beat": 8 }
+      ] },
     { "name": "Soup", "steps": [
       { "action": "chop", "beat": 0 }, { "action": "chop", "beat": 1 },
       { "action": "stir", "beat": 2 }, { "action": "stir", "beat": 3 }, { "action": "plate", "beat": 5 } ] },
