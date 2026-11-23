@@ -24,6 +24,13 @@ public class Cuttable : MonoBehaviour
         Apply(startColor);
     }
 
+    // Lets the spawner assign a per-ticket color
+    public void SetStartColor(Color c)
+    {
+        startColor = c;
+        if (!isCut) Apply(startColor);
+    }
+
     public void SetProgress(float t)
     {
         if (isCut) return;
@@ -42,7 +49,6 @@ public class Cuttable : MonoBehaviour
         isCut = true;
         Apply(cutColor);
         onCut?.Invoke();
-        // Later: swap for a sliced mesh, spawn particles, play a sound, etc.
     }
 
     void Apply(Color c)

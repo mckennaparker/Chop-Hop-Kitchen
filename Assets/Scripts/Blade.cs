@@ -1,11 +1,10 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
-
-
 public class Blade : MonoBehaviour
 {
     [Tooltip("Point on the blade that does the cutting. Defaults to this transform.")]
     [SerializeField] Transform edgePoint;
+    [SerializeField] Conductor conductor;
 
     XRGrabInteractable grab;
     Vector3 prevEdge;
@@ -70,6 +69,8 @@ public class Blade : MonoBehaviour
         {
             cuttable.Cut();
             done = true;
+
+            conductor.RegisterAction(ActionType.Chop);
             return true;
         }
 
