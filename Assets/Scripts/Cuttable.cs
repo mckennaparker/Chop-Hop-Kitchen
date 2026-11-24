@@ -13,6 +13,7 @@ public class Cuttable : MonoBehaviour
     Renderer rend;
     MaterialPropertyBlock block;
     bool isCut;
+    public bool IsCut => isCut;
 
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId = Shader.PropertyToID("_Color");

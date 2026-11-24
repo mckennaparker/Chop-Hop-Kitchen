@@ -9,7 +9,8 @@ public class CuttingStation : MonoBehaviour
     [SerializeField] GameObject cuttingBoard;
 
     [Header("Timing")]
-    [SerializeField] float spawnDelay = 0.75f; // pause between old ticket finishing and new cuttables appearing
+    [SerializeField] float spawnDelay = 1.0f; // pause between ticket activation and new cuttables appearing
+    [SerializeField] float clearDelay = 0.5f;  // how long a finished ticket's cuttables stay on the board
 
     float boardLength = 0.0f;
     Vector3 rightMostStart = Vector3.zero;
@@ -18,6 +19,8 @@ public class CuttingStation : MonoBehaviour
     private readonly Dictionary<Ticket, List<GameObject>> cuttablesByTicket = new();
     // Spawns that are waiting on the delay
     private readonly Dictionary<Ticket, Coroutine> pendingSpawns = new();
+    // Clears that are waiting on the delay
+    private readonly Dictionary<Ticket, Coroutine> pendingClears = new();
 
     void OnEnable()
     {
@@ -36,6 +39,7 @@ public class CuttingStation : MonoBehaviour
 
         // Coroutines stop automatically on disable, so just drop the stale handles
         pendingSpawns.Clear();
+        pendingClears.Clear();
     }
 
     void Awake()
@@ -67,7 +71,10 @@ public class CuttingStation : MonoBehaviour
 
         // If it finishes before its cuttables ever spawned, cancel the spawn too
         CancelPendingSpawn(ticket);
-        ClearCuttablesFor(ticket);
+
+        // Don't wipe the board on the last beat; let it linger briefly
+        if (cuttablesByTicket.ContainsKey(ticket) && !pendingClears.ContainsKey(ticket))
+            pendingClears[ticket] = StartCoroutine(ClearAfterDelay(ticket));
     }
 
     IEnumerator SpawnAfterDelay(Ticket ticket)
@@ -78,9 +85,19 @@ public class CuttingStation : MonoBehaviour
         SpawnCuttables(ticket);
     }
 
+    IEnumerator ClearAfterDelay(Ticket ticket)
+    {
+        yield return new WaitForSeconds(clearDelay);
+
+        pendingClears.Remove(ticket);
+        ClearCuttablesFor(ticket);
+    }
+
     void SpawnCuttables(Ticket ticket)
     {
-        ClearCuttablesFor(ticket);
+        // Wipe anything still lingering from earlier tickets (and this one, if re-spawned)
+        foreach (var t in new List<Ticket>(cuttablesByTicket.Keys))
+            ClearCuttablesFor(t);
 
         int numChoppables = 0;
         for (int i = 0; i < ticket.notes.Count; i++)
@@ -128,6 +145,14 @@ public class CuttingStation : MonoBehaviour
     void ClearCuttablesFor(Ticket ticket)
     {
         if (ticket == null) return;
+
+        // A manual clear also cancels its pending timer
+        if (pendingClears.TryGetValue(ticket, out var routine))
+        {
+            if (routine != null) StopCoroutine(routine);
+            pendingClears.Remove(ticket);
+        }
+
         if (!cuttablesByTicket.TryGetValue(ticket, out var list)) return;
 
         foreach (var c in list)

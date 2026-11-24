@@ -305,8 +305,8 @@ Transform:
   m_GameObject: {fileID: 141263771}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.088042006, y: 0.088042006, z: 0.088042006}
+  m_LocalPosition: {x: 0.002, y: -0.015, z: -0.009}
+  m_LocalScale: {x: 0.043799136, y: 0.088042006, z: 0.058024082}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2129719096}
@@ -461,7 +461,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 366368985}
   m_LocalRotation: {x: -0.08715574, y: 0, z: 0, w: 0.9961947}
-  m_LocalPosition: {x: 0, y: 0, z: 1.3}
+  m_LocalPosition: {x: 0, y: 0, z: 1.366}
   m_LocalScale: {x: 0.001, y: 0.001, z: 0.001}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -475,7 +475,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 1.425}
+  m_AnchoredPosition: {x: 0, y: 1.181}
   m_SizeDelta: {x: 1800, y: 700}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &483637871
@@ -651,7 +651,7 @@ Transform:
   m_GameObject: {fileID: 592854419}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.163, y: 1.148, z: -0.528}
+  m_LocalPosition: {x: -1.163, y: 1.148, z: -0.608}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -673,7 +673,8 @@ MonoBehaviour:
   conductor: {fileID: 2112674680}
   cuttableObject: {fileID: 5989480691651915452, guid: b5f9edb62a3ec4b47affa738cef63aef, type: 3}
   cuttingBoard: {fileID: 1515923802}
-  spawnDelay: 0.75
+  spawnDelay: 1
+  clearDelay: 0.5
 --- !u!4 &617394245 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1680501587, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
@@ -735,7 +736,7 @@ GameObject:
   m_Component:
   - component: {fileID: 680809970}
   m_Layer: 0
-  m_Name: CutPoint
+  m_Name: CutPoint1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -750,7 +751,7 @@ Transform:
   m_GameObject: {fileID: 680809969}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.6}
+  m_LocalPosition: {x: 0, y: -0.6, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -785,11 +786,12 @@ Transform:
   m_GameObject: {fileID: 716050886}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.1849, z: 0.0358}
-  m_LocalScale: {x: 0.014606197, y: 0.2339715, z: 0.15956733}
+  m_LocalPosition: {x: -0.000000065498, y: 0.1849, z: 0.0358}
+  m_LocalScale: {x: 0.0060593807, y: 0.2339715, z: 0.15956733}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 680809970}
+  - {fileID: 1165127467}
   m_Father: {fileID: 2129719096}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &716050888
@@ -882,8 +884,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3505dc37669517943a33d458315ad69e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Blade
-  edgePoint: {fileID: 680809970}
+  edgeBase: {fileID: 680809970}
+  edgeTip: {fileID: 1165127467}
   conductor: {fileID: 2112674680}
+  substeps: 4
+  completionMargin: 0.01
 --- !u!1 &781736828
 GameObject:
   m_ObjectHideFlags: 0
@@ -1273,6 +1278,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1165127466
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1165127467}
+  m_Layer: 0
+  m_Name: CutPoint2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1165127467
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1165127466}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.6, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 716050887}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1175784537
 GameObject:
@@ -2232,7 +2268,7 @@ Transform:
   m_GameObject: {fileID: 1580742516}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.7889, y: 0.49100003, z: -0.274}
+  m_LocalPosition: {x: -0.7889, y: 0.49100003, z: -0.35399997}
   m_LocalScale: {x: 0.68599564, y: 0.68599564, z: 0.68599564}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2935,9 +2971,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b81c5fd6cb4c98d43b0459838575d54c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Conductor
-  chartFile: {fileID: 4900000, guid: b2bc47b213ef4504882b65978eeeb63d, type: 3}
-  music: {fileID: 8300000, guid: f04dda2137ddd60429196843a165763b, type: 3}
+  chartFile: {fileID: 4900000, guid: 8821d3280efc4e54d90deb27a8787e52, type: 3}
+  music: {fileID: 8300000, guid: 2aaa6f70c360f7a4288d7523dff6a9bd, type: 3}
   leadIn: 5
+  startBeat: 0
+  actionSounds:
+  - type: 0
+    clip: {fileID: 8300000, guid: 8edf22e5cbb76aa4481e5e919e3643be, type: 3}
+    volume: 0.381
   tolerance: 0.25
   perfectWindow: 0
   queueLeadBeats: 8
@@ -3153,8 +3194,8 @@ MonoBehaviour:
   m_MatchAttachRotation: 1
   m_SnapToColliderVolume: 1
   m_ReinitializeDynamicAttachEverySingleGrab: 1
-  m_AttachEaseInTime: 0.2
-  m_MovementType: 0
+  m_AttachEaseInTime: 0.1
+  m_MovementType: 2
   m_PredictedVisualsTransform: {fileID: 0}
   m_VelocityDamping: 1
   m_VelocityScale: 1
@@ -3238,7 +3279,7 @@ Transform:
   m_GameObject: {fileID: 2129719093}
   serializedVersion: 2
   m_LocalRotation: {x: 0.61534214, y: 0.5644094, z: 0.31493038, w: 0.45123717}
-  m_LocalPosition: {x: 0.398, y: 0.921, z: 0.25}
+  m_LocalPosition: {x: 0.398, y: 0.921, z: 0.17000002}
   m_LocalScale: {x: 0.89074856, y: 0.89074856, z: 0.89074856}
   m_ConstrainProportionsScale: 0
   m_Children:
