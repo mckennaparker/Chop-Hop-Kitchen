@@ -79,7 +79,10 @@ public class Conductor : MonoBehaviour
         if (Song == null) enabled = false; // error already logged; Start won't run
     }
 
-    void Start() => PlaySong();
+    void Start()
+    { 
+    }
+    // => PlaySong();
 
     void Update()
     {

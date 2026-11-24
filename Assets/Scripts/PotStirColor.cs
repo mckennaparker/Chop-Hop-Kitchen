@@ -12,6 +12,8 @@ public class PotStirColor : MonoBehaviour
     Renderer rendererComponent;
     MaterialPropertyBlock propertyBlock;
 
+    [SerializeField] Conductor conductor;
+
     static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -34,11 +36,13 @@ public class PotStirColor : MonoBehaviour
         if (showDebugLogs)
             Debug.Log("PotStirColor: Stir completed; changing to green.", this);
         Apply(completedGreen);
+
+        if (conductor != null) conductor.RegisterAction(ActionType.Stir);
     }
 
     public void ResetColor()
     {
-        Apply(startBlue);
+        Apply(Color.teal);
     }
 
     void Apply(Color color)
