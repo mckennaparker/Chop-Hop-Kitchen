@@ -36,6 +36,8 @@ public class Conductor : MonoBehaviour
     [Header("Tickets")]
     [SerializeField] double queueLeadBeats = 8;  // how early a ticket appears on the rail
     [SerializeField] double activeLeadBeats = 2; // how early it expands into a lane
+    [Tooltip("Beats after a ticket's last note before it counts as finished (and TicketFinished fires), so the player has time to complete the final action before the next items spawn.")]
+    [SerializeField] double finishLeewayBeats = 1;
 
     public Song Song { get; private set; }
     public double SongTime { get; private set; }   // seconds since song start; negative during the lead-in
@@ -55,6 +57,7 @@ public class Conductor : MonoBehaviour
     int firstPending;          // index of earliest note that hasn't been judged yet
     int nextTicketToQueue;     // index of next ticket to put on the rail
     int nextTicketToActivate;  // index of next ticket to expand
+    int nextTicketToFinish;    // index of next ticket waiting to be marked Done
 
     // audio is always scheduled at least this far ahead so PlayScheduled can hit dspStart exactly,
     // even when leadIn is 0
@@ -86,6 +89,7 @@ public class Conductor : MonoBehaviour
         UpdateVisualTime();
         UpdateTickets();
         ExpireMissedNotes();
+        FinishTickets();
     }
 
     // dspTime only advances once per audio buffer (~10-20 ms steps), which makes scrolling stutter.
@@ -118,7 +122,7 @@ public class Conductor : MonoBehaviour
     public void PlaySong()
     {
         Song.ResetProgress();
-        firstPending = nextTicketToQueue = nextTicketToActivate = 0;
+        firstPending = nextTicketToQueue = nextTicketToActivate = nextTicketToFinish = 0;
 
         double startTime = Math.Max(0.0, startBeat) * Song.SecondsPerBeat;
         SkipTicketsBefore(startTime);
@@ -155,7 +159,7 @@ public class Conductor : MonoBehaviour
             t.state = TicketState.Done;
             foreach (Note note in t.notes) note.judged = true;
         }
-        nextTicketToActivate = nextTicketToQueue;
+        nextTicketToActivate = nextTicketToFinish = nextTicketToQueue;
         // firstPending stays 0; ExpireMissedNotes/RegisterAction already step over judged notes
     }
 
@@ -229,9 +233,22 @@ public class Conductor : MonoBehaviour
             t.misses++;
             NoteMissed?.Invoke(note);
         }
+    }
 
-        if (t.IsFinished)
+    // a ticket is Done once all its notes are judged AND finishLeewayBeats have passed since its
+    // last note, so finishing it (and whatever spawns off TicketFinished) doesn't land on top of
+    // the player's final action
+    void FinishTickets()
+    {
+        double leeway = finishLeewayBeats * Song.SecondsPerBeat;
+        var tickets = Song.tickets;
+
+        while (nextTicketToFinish < tickets.Count)
         {
+            Ticket t = tickets[nextTicketToFinish];
+            if (!t.IsFinished || SongTime < t.endTime + leeway) return;
+
+            nextTicketToFinish++;
             t.state = TicketState.Done;
             TicketFinished?.Invoke(t);
         }
@@ -268,6 +285,7 @@ public class Conductor : MonoBehaviour
         leadIn = Math.Max(0.0, leadIn);
         startBeat = Math.Max(0.0, startBeat);
         activeLeadBeats = Math.Max(0.0, activeLeadBeats);
+        finishLeewayBeats = Math.Max(0.0, finishLeewayBeats);
         queueLeadBeats = Math.Max(activeLeadBeats, queueLeadBeats); // must queue before activating
     }
 }

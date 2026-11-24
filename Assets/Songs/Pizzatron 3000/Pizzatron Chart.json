@@ -21,10 +21,8 @@
     { "name": "Margherita Pizza", "steps": [
       { "action": "chop", "beat": 0 }, 
       { "action": "chop", "beat": 2 }, 
-      { "action": "chop", "beat": 2.5 },
       { "action": "chop", "beat": 4 }, 
-      { "action": "chop", "beat": 6 },
-      { "action": "chop", "beat": 6.5 }
+      { "action": "chop", "beat": 6 }
       ] }
   ],
   "orders": [
