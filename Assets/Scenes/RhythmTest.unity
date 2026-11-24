@@ -274,9 +274,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b81c5fd6cb4c98d43b0459838575d54c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Conductor
-  chartFile: {fileID: 4900000, guid: b2bc47b213ef4504882b65978eeeb63d, type: 3}
-  music: {fileID: 8300000, guid: f04dda2137ddd60429196843a165763b, type: 3}
-  leadIn: 5
+  chartFile: {fileID: 4900000, guid: 8821d3280efc4e54d90deb27a8787e52, type: 3}
+  music: {fileID: 8300000, guid: 2aaa6f70c360f7a4288d7523dff6a9bd, type: 3}
+  leadIn: 3
+  actionSounds:
+  - type: 0
+    clip: {fileID: 8300000, guid: 7d0eb67b03bfdcd46974b75fcb2bf361, type: 3}
+    volume: 1
   tolerance: 0.1
   perfectWindow: 0.035
   queueLeadBeats: 8
