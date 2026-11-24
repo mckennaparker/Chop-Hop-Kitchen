@@ -238,8 +238,8 @@ public class Cuttable : MonoBehaviour
         float thickness = Mathf.Max(0.03f * R, R - side * dc);
         float rho = Mathf.Sqrt(Mathf.Max(0f, R * R - dc * dc));
 
-        float width = 1.25f * Mathf.Max(0.03f * R, rho * 1.4f);
-        float height = 1.25f * Mathf.Max(0.02f * R, thickness * 0.7f);
+        float width = 1.15f * Mathf.Max(0.03f * R, rho * 1.4f);
+        float height = 1.15f * Mathf.Max(0.02f * R, thickness * 0.7f);
 
         h.boxT.localRotation = Quaternion.FromToRotation(Vector3.up, b);
         h.boxT.localPosition = planePoint + b * (height * 0.5f);
