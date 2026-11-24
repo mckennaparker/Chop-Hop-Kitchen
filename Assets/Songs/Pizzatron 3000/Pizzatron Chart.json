@@ -1,0 +1,67 @@
+{
+  "bpm": 160.4,
+  "recipes": [
+    { "name": "Cheese Pizza", "steps": [
+      { "action": "chop", "beat": 0 }, 
+      { "action": "chop", "beat": 1 }, 
+      { "action": "chop", "beat": 2 },
+      { "action": "chop", "beat": 4 }, 
+      { "action": "chop", "beat": 5 }, 
+      { "action": "chop", "beat": 6 }
+      ] },
+    { "name": "Pepperoni Pizza", "steps": [
+      { "action": "chop", "beat": 0 }, 
+      { "action": "chop", "beat": 1 }, 
+      { "action": "chop", "beat": 2 },
+      { "action": "chop", "beat": 3 }, 
+      { "action": "chop", "beat": 4 }, 
+      { "action": "chop", "beat": 5 },
+      { "action": "chop", "beat": 6 }
+      ] },
+    { "name": "Margherita Pizza", "steps": [
+      { "action": "chop", "beat": 0 }, 
+      { "action": "chop", "beat": 2 }, 
+      { "action": "chop", "beat": 4 }, 
+      { "action": "chop", "beat": 6 }
+      ] }
+  ],
+  "orders": [
+    { "recipe": "Cheese Pizza", "beat": 16 },
+    { "recipe": "Cheese Pizza",   "beat": 24 },
+    { "recipe": "Cheese Pizza",   "beat": 32 },
+    { "recipe": "Cheese Pizza",   "beat": 40 },
+    { "recipe": "Cheese Pizza",   "beat": 48 },
+    { "recipe": "Cheese Pizza",   "beat": 56 },
+    { "recipe": "Pepperoni Pizza",   "beat": 64 },
+    { "recipe": "Pepperoni Pizza",   "beat": 72 },
+    { "recipe": "Pepperoni Pizza",   "beat": 80 },
+    { "recipe": "Pepperoni Pizza",   "beat": 88 },
+    { "recipe": "Margherita Pizza",   "beat": 96 },
+    { "recipe": "Margherita Pizza",   "beat": 104 },
+    { "recipe": "Margherita Pizza",   "beat": 112 },
+    { "recipe": "Margherita Pizza",   "beat": 120 },
+    { "recipe": "Cheese Pizza", "beat": 128 },
+    { "recipe": "Cheese Pizza", "beat": 136 },
+    { "recipe": "Cheese Pizza", "beat": 144 },
+    { "recipe": "Cheese Pizza", "beat": 152 },
+    
+    { "recipe": "Cheese Pizza", "beat": 176 },
+    { "recipe": "Cheese Pizza", "beat": 184 },
+    { "recipe": "Cheese Pizza", "beat": 192 },
+    { "recipe": "Cheese Pizza", "beat": 200 },
+    { "recipe": "Cheese Pizza", "beat": 208 },
+    { "recipe": "Cheese Pizza", "beat": 216 },
+    { "recipe": "Pepperoni Pizza", "beat": 224 },
+    { "recipe": "Pepperoni Pizza", "beat": 232 },
+    { "recipe": "Pepperoni Pizza", "beat": 240 },
+    { "recipe": "Pepperoni Pizza", "beat": 248 },
+    { "recipe": "Margherita Pizza", "beat": 256 },
+    { "recipe": "Margherita Pizza", "beat": 264 },
+    { "recipe": "Margherita Pizza", "beat": 272 },
+    { "recipe": "Margherita Pizza", "beat": 280 },
+    { "recipe": "Cheese Pizza", "beat": 288 },
+    { "recipe": "Cheese Pizza", "beat": 296 },
+    { "recipe": "Cheese Pizza", "beat": 304 },
+    { "recipe": "Cheese Pizza", "beat": 312 }
+  ]
+}
