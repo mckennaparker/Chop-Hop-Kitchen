@@ -65,7 +65,7 @@ public class Blade : MonoBehaviour
         float chord = -2f * Vector3.Dot(dir, entry - c);
         if (chord <= 0f) return false;
 
-        if (depth >= chord - 0.001f)   // 1 mm tolerance for the boundary case
+        if (depth >= chord - 0.01f)   // 1 mm tolerance for the boundary case
         {
             cuttable.Cut();
             done = true;
