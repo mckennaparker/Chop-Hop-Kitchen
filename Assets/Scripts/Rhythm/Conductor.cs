@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Owns the song clock and audio playback, judges player actions against the chart,
@@ -11,6 +12,22 @@ public class Conductor : MonoBehaviour
     [SerializeField] TextAsset chartFile;
     [SerializeField] AudioClip music;
     [SerializeField] double leadIn = 2.0; // seconds of silence before the music starts; the clock (and tickets) run during it
+
+    [Header("Debug")]
+    [Tooltip("Beat to start playback from (after the lead-in). Tickets that start before it are skipped. Leave at 0 for normal play.")]
+    [SerializeField] double startBeat = 0;
+
+    // per-song sound played whenever the player performs an action (e.g. a kick for Chop)
+    [Serializable]
+    public class ActionSound
+    {
+        public ActionType type;
+        public AudioClip clip;
+        [Range(0f, 1f)] public float volume = 1f;
+    }
+
+    [Header("Sound Effects")]
+    [SerializeField] List<ActionSound> actionSounds = new();
 
     [Header("Judging")]
     [SerializeField] double tolerance = 0.1;      // seconds allowed on either side of a note's time
@@ -33,6 +50,7 @@ public class Conductor : MonoBehaviour
     public event Action<Ticket> TicketQueued, TicketActivated, TicketFinished;
 
     AudioSource source;
+    AudioSource sfxSource; // separate from the music source so Stop()/clip swaps never cut effects
     double dspStart;
     int firstPending;          // index of earliest note that hasn't been judged yet
     int nextTicketToQueue;     // index of next ticket to put on the rail
@@ -49,6 +67,10 @@ public class Conductor : MonoBehaviour
     {
         source = GetComponent<AudioSource>();
         source.playOnAwake = false;
+
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.playOnAwake = false;
+        sfxSource.outputAudioMixerGroup = source.outputAudioMixerGroup;
 
         Song = ChartLoader.Load(chartFile);
         if (Song == null) enabled = false; // error already logged; Start won't run
@@ -92,17 +114,25 @@ public class Conductor : MonoBehaviour
         return null;
     }
 
-    // begins (or restarts) playback of the song from the top
+    // begins (or restarts) playback of the song from startBeat (normally the top)
     public void PlaySong()
     {
         Song.ResetProgress();
         firstPending = nextTicketToQueue = nextTicketToActivate = 0;
 
+        double startTime = Math.Max(0.0, startBeat) * Song.SecondsPerBeat;
+        SkipTicketsBefore(startTime);
+
         source.Stop();
         source.clip = music;
-        // song time 0 is when the music starts; everything before it is the silent lead-in
-        dspStart = AudioSettings.dspTime + ScheduleBuffer + leadIn;
-        source.PlayScheduled(dspStart);
+        if (music != null)
+            source.timeSamples = Math.Clamp((int)(startTime * music.frequency), 0, music.samples - 1);
+
+        // the music starts (at startTime into the clip) after the lead-in; dspStart is when song time 0
+        // would have been, so SongTime reads startTime at the moment the audio begins
+        double musicStartDsp = AudioSettings.dspTime + ScheduleBuffer + leadIn;
+        dspStart = musicStartDsp - startTime;
+        source.PlayScheduled(musicStartDsp);
 
         SongTime = VisualTime = Now; // negative for the whole lead-in
         IsPlaying = true;
@@ -112,11 +142,29 @@ public class Conductor : MonoBehaviour
         UpdateTickets();
     }
 
+    // debug start: tickets that begin before startTime are silently marked done (no hit/miss events)
+    // so the song picks up cleanly at the first whole ticket at or after startTime
+    void SkipTicketsBefore(double startTime)
+    {
+        if (startTime <= 0) return;
+
+        var tickets = Song.tickets;
+        while (nextTicketToQueue < tickets.Count && tickets[nextTicketToQueue].startTime < startTime)
+        {
+            Ticket t = tickets[nextTicketToQueue++];
+            t.state = TicketState.Done;
+            foreach (Note note in t.notes) note.judged = true;
+        }
+        nextTicketToActivate = nextTicketToQueue;
+        // firstPending stays 0; ExpireMissedNotes/RegisterAction already step over judged notes
+    }
+
     // called whenever the player performs an action
     // returns true if it hit an unjudged note of that type within the tolerance window
     public bool RegisterAction(ActionType type)
     {
         if (!IsPlaying) return false;
+        PlayActionSound(type); // feedback for every action, hit or not
         double now = Now;
 
         for (int i = firstPending; i < Song.notes.Count; i++)
@@ -132,6 +180,16 @@ public class Conductor : MonoBehaviour
         }
 
         return false;
+    }
+
+    void PlayActionSound(ActionType type)
+    {
+        foreach (ActionSound s in actionSounds)
+        {
+            if (s.type != type || s.clip == null) continue;
+            sfxSource.PlayOneShot(s.clip, s.volume);
+            return;
+        }
     }
 
     // marks notes whose window has passed without a hit as missed
@@ -208,6 +266,7 @@ public class Conductor : MonoBehaviour
         tolerance = Math.Max(0.0, tolerance);
         perfectWindow = Math.Clamp(perfectWindow, 0.0, tolerance);
         leadIn = Math.Max(0.0, leadIn);
+        startBeat = Math.Max(0.0, startBeat);
         activeLeadBeats = Math.Max(0.0, activeLeadBeats);
         queueLeadBeats = Math.Max(activeLeadBeats, queueLeadBeats); // must queue before activating
     }
