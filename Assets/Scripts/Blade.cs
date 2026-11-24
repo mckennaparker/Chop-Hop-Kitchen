@@ -101,16 +101,16 @@ public class Blade : MonoBehaviour
         float q2 = w.sqrMagnitude - s * s;
         float e = Mathf.Sqrt(Mathf.Max(0f, r * r - q2));   // far surface at +e, near surface at -e
 
-        if (s > 0f && e - s <= completionMargin)          // rhythm-game forgiveness
+        if (s > 0f && e - s <= completionMargin)
         {
-            Complete(c);
+            Complete(c, p, u);
             return true;
         }
 
         if (!touching)
         {
-            if (s > 0f) { Complete(c); return true; }      // exited the far side
-            CancelCut(c);                                  // poked and retreated
+            if (s > 0f) { Complete(c, p, u); return true; }
+            CancelCut(c);
             return false;
         }
 
@@ -118,11 +118,10 @@ public class Blade : MonoBehaviour
         return false;
     }
 
-    void Complete(Cuttable c)
+    void Complete(Cuttable c, Vector3 edgePoint, Vector3 edgeDir)
     {
-        // If you bring splitting back, the cut plane normal is Vector3.Cross(edgeDir, c.bladeSweep)
-        c.ClearBladeState();
-        c.Cut();
+        Vector3 normal = Vector3.Cross(edgeDir, c.bladeSweep).normalized;
+        c.Cut(edgePoint, normal);     // Cut() clears the blade state itself
         if (conductor != null) conductor.RegisterAction(ActionType.Chop);
     }
 

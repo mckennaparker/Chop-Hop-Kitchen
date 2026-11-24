@@ -91,6 +91,7 @@ public class CuttingStation : MonoBehaviour
 
     void ReleaseCuttable(Cuttable c)
     {
+        c.HideHalves();
         c.gameObject.SetActive(false);
         pool.Push(c);
     }
@@ -138,28 +139,36 @@ public class CuttingStation : MonoBehaviour
 
     // ---------- Spawning / clearing ----------
 
+    readonly List<Note> scratchNotes = new();   // field, avoids a per-spawn allocation
+
     void SpawnCuttables(Ticket ticket)
     {
-        // Clear anything still lingering from earlier tickets (no allocation)
+        // Clear anything still lingering from earlier tickets
         scratchTickets.Clear();
         foreach (var t in cuttablesByTicket.Keys) scratchTickets.Add(t);
         for (int i = 0; i < scratchTickets.Count; i++) ClearCuttablesFor(scratchTickets[i]);
 
-        int numChoppables = 0;
+        scratchNotes.Clear();
         for (int i = 0; i < ticket.notes.Count; i++)
         {
-            if (ticket.notes[i] != null && ticket.notes[i].type == ActionType.Chop)
-                numChoppables++;
+            var note = ticket.notes[i];
+            if (note != null && note.type == ActionType.Chop)
+                scratchNotes.Add(note);
         }
 
-        var list = listPool.Count > 0 ? listPool.Pop() : new List<Cuttable>(numChoppables);
-        float delta = boardLength / (numChoppables + 1.0f);
+        var list = listPool.Count > 0 ? listPool.Pop() : new List<Cuttable>(scratchNotes.Count);
+
+        const int beatsPerMeasure = 8;
+        float delta = boardLength / (beatsPerMeasure + 1f);
         Color ticketColor = GetTicketColor(ticket);
 
-        for (int i = 1; i <= numChoppables; i++)
+        for (int i = 0; i < scratchNotes.Count; i++)
         {
+            // Slot 1..8 across the board, so no cuttable sits on the edge
+            float slot = Mathf.Repeat((float)scratchNotes[i].beat, beatsPerMeasure) + 1f;
+
             Vector3 pos = rightMostStart;
-            pos.x -= delta * i;
+            pos.x -= delta * slot;
             list.Add(GetCuttable(pos, ticketColor));
         }
 

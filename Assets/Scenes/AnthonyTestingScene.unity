@@ -289,7 +289,7 @@ GameObject:
   - component: {fileID: 141263775}
   - component: {fileID: 141263774}
   - component: {fileID: 141263776}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: HandleMesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -525,7 +525,7 @@ GameObject:
   - component: {fileID: 519482820}
   - component: {fileID: 519482819}
   - component: {fileID: 519482818}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -737,7 +737,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 680809970}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: CutPoint1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -772,7 +772,7 @@ GameObject:
   - component: {fileID: 716050889}
   - component: {fileID: 716050888}
   - component: {fileID: 716050891}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1290,7 +1290,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1165127467}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: CutPoint2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1744,7 +1744,7 @@ GameObject:
   - component: {fileID: 1368078197}
   - component: {fileID: 1368078196}
   - component: {fileID: 1368078195}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2018,7 +2018,7 @@ GameObject:
   - component: {fileID: 1515923806}
   - component: {fileID: 1515923805}
   - component: {fileID: 1515923804}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: CuttingBoard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2329,7 +2329,7 @@ GameObject:
   - component: {fileID: 1711912867}
   - component: {fileID: 1711912866}
   - component: {fileID: 1711912865}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3109,7 +3109,7 @@ GameObject:
   - component: {fileID: 2129719096}
   - component: {fileID: 2129719095}
   - component: {fileID: 2129719094}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Blade
   m_TagString: Untagged
   m_Icon: {fileID: 0}

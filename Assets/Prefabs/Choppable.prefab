@@ -111,7 +111,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 0.55
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &4747960767761768781
 MonoBehaviour:
@@ -128,6 +128,11 @@ MonoBehaviour:
   startColor: {r: 1, g: 1, b: 1, a: 1}
   progressColor: {r: 0, g: 0, b: 1, a: 1}
   cutColor: {r: 0.1444292, g: 1, b: 0, a: 1}
+  capColor: {r: 1, g: 1, b: 1, a: 1}
+  clipMaterial: {fileID: 2100000, guid: 1080c10db2d335f408ed7725559d41bc, type: 2}
+  fragmentLayer: Fragment
+  fragmentMass: 0.25
+  separationSpeed: 0.3
   onCut:
     m_PersistentCalls:
       m_Calls: []
