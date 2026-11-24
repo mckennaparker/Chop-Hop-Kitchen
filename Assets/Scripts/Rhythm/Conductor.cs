@@ -10,7 +10,6 @@ public class Conductor : MonoBehaviour
     [Header("Song")]
     [SerializeField] TextAsset chartFile;
     [SerializeField] AudioClip music;
-    [SerializeField] AudioClip chopNoise;
     [SerializeField] double leadIn = 2.0; // seconds of silence before the music starts; the clock (and tickets) run during it
 
     [Header("Judging")]
@@ -165,9 +164,6 @@ public class Conductor : MonoBehaviour
         if (hit)
         {
             t.hits++;
-
-            source.PlayOneShot(chopNoise);
-
             NoteHit?.Invoke(note, delta);
         }
         else
