@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 55daccc09a3b69647bbab145b54a3ab3
+  - enabled: 1
+    path: Assets/Scenes/McKennaTestScene.unity
+    guid: 2270d7574dfc9104bbde703865ed41e7
   - enabled: 1
     path: Assets/Scenes/AnthonyTestingScene.unity
     guid: 22e9aa64c6454de4e94a18fedf935b94

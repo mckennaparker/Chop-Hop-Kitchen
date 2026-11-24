@@ -1,12 +1,12 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
 public class ReloadScene : MonoBehaviour
 {
     public Conductor conductor;
     public void ReloadCurrentScene()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        UnitySceneManager.LoadScene(UnitySceneManager.GetActiveScene().buildIndex);
     }
 
     public void StartSong()
