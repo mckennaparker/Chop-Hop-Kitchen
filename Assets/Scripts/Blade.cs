@@ -14,142 +14,127 @@ public class Blade : MonoBehaviour
 
     XRGrabInteractable grab;
     Vector3 prevA, prevB;
+    bool hasPrev;
 
-    SphereCollider target;
-    Cuttable cuttable;
-    bool active;          // cut in progress
-    bool done;            // already cut; re-arm once contact ends
-    bool pendingRelease;
-    Vector3 n;            // sweep direction, fixed when the cut begins
+    void Awake() => grab = GetComponentInParent<XRGrabInteractable>();
 
-    void Awake()
+    void OnEnable() => hasPrev = false;   // avoid a fake sweep from stale positions
+
+    void OnDisable()
     {
-        grab = GetComponentInParent<XRGrabInteractable>();
-        prevA = edgeBase.position;
-        prevB = edgeTip.position;
-    }
-
-    // The trigger only chooses which sphere to watch
-    void OnTriggerStay(Collider other)
-    {
-        if (target == null && other is SphereCollider sc)
-        {
-            var c = sc.GetComponentInParent<Cuttable>();
-            if (c == null || c.IsCut) return;
-            target = sc;
-            cuttable = c;
-            active = done = pendingRelease = false;
-        }
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (target != null && other == target) pendingRelease = true;
+        foreach (var c in Cuttable.All) CancelCut(c);
     }
 
     void LateUpdate()
     {
         Vector3 a = edgeBase.position, b = edgeTip.position;
 
-        if (target != null)
+        if (!hasPrev)
         {
+            prevA = a; prevB = b; hasPrev = true;
+            return;
+        }
+
+        bool held = grab != null && grab.isSelected;
+        var all = Cuttable.All;
+
+        for (int k = all.Count - 1; k >= 0; k--)
+        {
+            if (k >= all.Count) continue;          // list can change if a callback disables something
+            var c = all[k];
+            if (c == null || c.IsCut || c.Sphere == null) continue;
+
+            if (!held) { CancelCut(c); continue; }
+
             for (int i = 1; i <= substeps; i++)
             {
-                float t0 = (i - 1) / (float)substeps, t = i / (float)substeps;
+                float t0 = (i - 1) / (float)substeps, t1 = i / (float)substeps;
                 Vector3 a0 = Vector3.Lerp(prevA, a, t0), b0 = Vector3.Lerp(prevB, b, t0);
-                Vector3 a1 = Vector3.Lerp(prevA, a, t), b1 = Vector3.Lerp(prevB, b, t);
+                Vector3 a1 = Vector3.Lerp(prevA, a, t1), b1 = Vector3.Lerp(prevB, b, t1);
                 Vector3 motion = (a1 + b1) * 0.5f - (a0 + b0) * 0.5f;
 
-                Step(a1, b1, motion);
-                if (target == null) break;
+                if (Step(c, a1, b1, motion)) break;   // true = cut completed
             }
 
-            if (pendingRelease && target != null)
-            {
-                Cancel();
-                target = null;
-                cuttable = null;
-                pendingRelease = false;
-            }
+            // Apply the color once per frame instead of once per substep
+            if (c.bladeActive && !c.IsCut) c.SetProgress(c.bladeProgress);
         }
 
         prevA = a;
         prevB = b;
     }
 
-    void Step(Vector3 a, Vector3 b, Vector3 motion)
+    // Returns true if this step completed the cut
+    bool Step(Cuttable c, Vector3 a, Vector3 b, Vector3 motion)
     {
-        GetSphere(target, out Vector3 c, out float r);
+        GetSphere(c.Sphere, out Vector3 center, out float r);
 
-        Vector3 p = ClosestOnSegment(a, b, c);   // point on the edge nearest the sphere center
-        Vector3 w = p - c;
+        Vector3 p = ClosestOnSegment(a, b, center);   // point on the edge nearest the center
+        Vector3 w = p - center;
         bool touching = w.sqrMagnitude <= r * r;
-
-        if (done) { if (!touching) done = false; return; }
-        if (!grab.isSelected) { Cancel(); return; }
+        bool justEntered = touching && !c.bladeTouching;
+        c.bladeTouching = touching;
 
         Vector3 u = (b - a).normalized;
 
         // --- Begin: the edge touches the sphere while moving ---
-        if (!active)
+        if (!c.bladeActive)
         {
-            if (!touching) return;
+            if (!touching) return false;
 
             Vector3 m = motion - u * Vector3.Dot(motion, u);   // sweep direction, minus sliding along the edge
-            if (m.sqrMagnitude < 1e-10f) return;
+            if (m.sqrMagnitude < 1e-10f) return false;
             Vector3 dir = m.normalized;
 
-            if (Vector3.Dot(w, dir) > 0f) return;              // already past the center: not entering
+            // Fresh contact always starts a cut, even if a fast swing is already past the center.
+            // Contact that began some other way must be heading inward.
+            if (!justEntered && Vector3.Dot(w, dir) > 0f) return false;
 
-            n = dir;
-            active = true;
-            cuttable.SetProgress(0f);
-            return;
+            c.bladeSweep = dir;
+            c.bladeActive = true;
+            // fall through and evaluate this same step
         }
 
         // --- Cutting ---
-        float s = Vector3.Dot(w, n);                           // position along the sweep, 0 = center
+        Vector3 n = c.bladeSweep;
+        float s = Vector3.Dot(w, n);                       // position along the sweep, 0 = center
         float q2 = w.sqrMagnitude - s * s;
-        float e = Mathf.Sqrt(Mathf.Max(0f, r * r - q2));       // far surface at +e, near surface at -e
+        float e = Mathf.Sqrt(Mathf.Max(0f, r * r - q2));   // far surface at +e, near surface at -e
 
-        // Rhythm-game forgiveness: count the hit slightly before the edge fully exits
-        if (s > 0f && e - s <= completionMargin)
+        if (s > 0f && e - s <= completionMargin)          // rhythm-game forgiveness
         {
-            Complete(p, u);
-            return;
+            Complete(c);
+            return true;
         }
 
         if (!touching)
         {
-            if (s > 0f) Complete(p, u);
-            else Cancel();
-            return;
+            if (s > 0f) { Complete(c); return true; }      // exited the far side
+            CancelCut(c);                                  // poked and retreated
+            return false;
         }
 
-        cuttable.SetProgress(e > 1e-4f ? Mathf.Clamp01((s + e) / (2f * e)) : 1f);
+        c.bladeProgress = e > 1e-4f ? Mathf.Clamp01((s + e) / (2f * e)) : 1f;
+        return false;
     }
 
-    void Complete(Vector3 point, Vector3 edgeDir)
+    void Complete(Cuttable c)
     {
-        var cut = cuttable;
-        if (cut == null || cut.IsCut) return;
-
-        Vector3 normal = Vector3.Cross(edgeDir, n).normalized;
-
-        active = false;
-        done = true;
-        target = null;
-        cuttable = null;
-        pendingRelease = false;
-
-        cut.Cut();   // or cut.Cut(point, normal) if you're using the splitting version
+        // If you bring splitting back, the cut plane normal is Vector3.Cross(edgeDir, c.bladeSweep)
+        c.ClearBladeState();
+        c.Cut();
         if (conductor != null) conductor.RegisterAction(ActionType.Chop);
     }
 
-    void Cancel()
+    static void CancelCut(Cuttable c)
     {
-        active = false;
-        if (cuttable != null) cuttable.ResetProgress();
+        if (c == null) return;
+        if (c.bladeActive)
+        {
+            c.bladeActive = false;
+            c.ResetProgress();
+        }
+        c.bladeTouching = false;
     }
 
     static Vector3 ClosestOnSegment(Vector3 a, Vector3 b, Vector3 p)
@@ -165,13 +150,5 @@ public class Blade : MonoBehaviour
         center = sc.transform.TransformPoint(sc.center);
         Vector3 s = sc.transform.lossyScale;
         radius = sc.radius * Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z));
-    }
-
-    void OnDisable()
-    {
-        Cancel();
-        target = null;
-        cuttable = null;
-        active = done = pendingRelease = false;
     }
 }

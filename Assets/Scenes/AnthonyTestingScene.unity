@@ -675,6 +675,8 @@ MonoBehaviour:
   cuttingBoard: {fileID: 1515923802}
   spawnDelay: 1
   clearDelay: 0.5
+  prewarmCount: 8
+  reservedHueRange: {x: 0.22, y: 0.45}
 --- !u!4 &617394245 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1680501587, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
@@ -2958,7 +2960,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DebugKeyboardInput
   conductor: {fileID: 2112674680}
-  logJudgements: 1
+  logJudgements: 0
 --- !u!114 &2112674680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2971,18 +2973,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b81c5fd6cb4c98d43b0459838575d54c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Conductor
-  chartFile: {fileID: 4900000, guid: 8821d3280efc4e54d90deb27a8787e52, type: 3}
+  chartFile: {fileID: 4900000, guid: f90ba120da7eb694cb1b2d0757f1bf97, type: 3}
   music: {fileID: 8300000, guid: 2aaa6f70c360f7a4288d7523dff6a9bd, type: 3}
   leadIn: 5
   startBeat: 0
   actionSounds:
   - type: 0
-    clip: {fileID: 8300000, guid: 8edf22e5cbb76aa4481e5e919e3643be, type: 3}
-    volume: 0.381
+    clip: {fileID: 8300000, guid: c3dd660ebcc87fb439b1d460dce75f31, type: 3}
+    volume: 0.93
   tolerance: 0.25
   perfectWindow: 0
   queueLeadBeats: 8
   activeLeadBeats: 4
+  finishLeewayBeats: 1
 --- !u!82 &2112674681
 AudioSource:
   m_ObjectHideFlags: 0
